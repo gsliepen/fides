@@ -1,0 +1,98 @@
+X.509 and OpenPGP certificates are primarily for authentication (proving
+identity).  There is limitted support for authorisation, and that support is
+very domain-specific (hostnames in X.509, email addresses in OpenPGP).
+Certificates are quite large.  Once a certifacte has been generated, adding or
+removing authentication or authorisation is hard, especially removing.  X.509
+hierarchical trust is inflexible, OpenPGP web-of-trust is much better.
+
+Libfides is about managing certificates. Small and lots of certificates.  There
+is nothing domain-specific, a certificate can be for authentication or
+authorisation, or for binding, or anything that can be implemented as a signed
+statement.  There is only one kind of certificate, there are no special things
+like revocation certificates.
+
+Libfides uses ECC, because ECC keys and ECDSA signatures are small, which is
+necessary if we want to handle lots of certificates. It also allows
+certificates to be cut&pasted or written down or efficiently sent via the
+network.
+
+A certificate consists of a timestamp, a key identifier, a statement, and a
+signature of the timestamp and statement made with the key identified.
+
+Libfides also provides functions to work with the known set of certificates.
+It should make the following very easy for a programmer using libfides:
+
+- intialisation (key generation, creating repository)
+- generating certificates
+- verifying certificates
+- setting trust for other keys
+- query trust paths
+- calculating if a statement is to be trusted
+- handling negative statements
+- searching statements
+- synchronising certificate repositories
+
+fides_init();
+fides_cert *cert = fides_cert_create("Hello certificate!");
+puts(fides_cert_get_statement(cert)); // prints "Hello certificate!";
+puts(fides_cert_to_string(cert));     // prints above + timestamp + keyid + signature;
+char *othercert = gets();             // you get the idea
+fides_cert *cert2 = fides_cert_import(othercert);
+if(cert2)
+	puts(fides_cert_get_statement(cert2)); // prints statement included in certificate read from stdin
+if(!fides_cert_verify(cert2))         // verifies signature
+	puts("BAD certificate! BAD!");
+fides_cert_store(cert2);
+
+// Find certificates with a particular statement
+fides_cert *certs[100];
+int matches = fides_cert_find("Another statement", certs, 100);
+for(int i = 0; i < matches; i++)
+	puts(fides_cert_to_string(certs[i]));
+
+// Trust or remove trust of other's keys
+fides_key *key1, *key2, *key3;
+fides_key_trust(key1);
+fides_key_untrust(key2);
+if(fides_key_is_trusted(key3))
+	printf("We trust %s\n", fides_key_to_string(key3));
+
+// Find out if a statement is authorised
+// Looks for statements like "allow localuser read /etc/motd" and "deny localuser read /etc/motd",
+// looks at the most recent statement from each key,
+// discards keys that are not trusted,
+// and decides to allow or deny based on count of "allow ..." and "deny ..." statements left.
+if(fides_is_allowed("localuser read /etc/motd"))
+	puts("User 'localuser' is allowed to read '/etc/motd'");
+if(fides_is_denied("remoteuser port 22"))
+	puts("User 'remoteuser' is denied access to port 22");
+
+// Automatically create allow or deny certificates
+fides_allow("all access http://my.site.org/");
+fides_deny("googlebot access http://my.site.org/dontindex/");
+
+// Revoke your own key
+fides_key *key = fides_key_self();
+fides_key_untrust(key);
+fides_cert *cert = fides_cert_create_trust(key); // generate a certificate saying whether we trust a key or not
+puts(fides_cert_to_string(cert));
+
+// Repository synchronisation
+// First exchanges timestamp of latest known certificate.
+// If one side has earlier timestamp, other side send all certificates with a newer timestamp.
+// Then exchange number of items and hash of entire repository with peer.
+// If the number or hash doesn't match, binary subdivision will follow.
+// Hash is last 128 bits of the XOR of all valid signatures.
+// Binary subdivision based on the last bits of the signatures.
+char outbuf[1024];
+char inbuf[1024];
+fides_sync_start();
+while(!fides_sync_done()) {
+	len = fides_sync_read(char *buf, sizeof buf);
+	if(len)
+		send(sock, buf, len);
+	if(poll(sock, POLLIN)) {
+		len = recv(sock, buf, sizeof buf);
+		fides_sync_write(buf, len);
+	}
+}
