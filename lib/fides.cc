@@ -15,12 +15,13 @@
    License along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <stdint.h>
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
 #include <botan/types.h>
 #include <botan/botan.h>
 #include <botan/ecdsa.h>
@@ -28,9 +29,6 @@
 #include <botan/lookup.h>
 #include <botan/filters.h>
 #include <botan/sha2_32.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
 #include <list>
 
 #include "fides.h"
