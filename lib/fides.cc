@@ -37,7 +37,6 @@ using namespace std;
 
 // Global state
 
-Botan::LibraryInitializer libinit;
 Botan::AutoSeeded_RNG fides::rng;
 
 // Public key functions
@@ -63,11 +62,11 @@ void fides::publickey::load(const std::string &filename) {
 	load(in);
 }
 
-void fides::publickey::save(ostream &out) {
+void fides::publickey::save(ostream &out) const {
 	out << to_string();
 }
 
-void fides::publickey::save(const std::string &filename) {
+void fides::publickey::save(const std::string &filename) const {
 	ofstream out(filename.c_str());
 	save(out);
 }
@@ -81,18 +80,18 @@ void fides::publickey::from_string(const std::string &in) {
 	}
 }
 
-string fides::publickey::to_string() {
+string fides::publickey::to_string() const {
 	return Botan::X509::PEM_encode(*pub);
 }
 
-string fides::publickey::fingerprint(unsigned int bits) {
+string fides::publickey::fingerprint(unsigned int bits) const {
 	// TODO: find out if there is a standard way to get a hash of an ECDSA public key
 	Botan::SHA_256 sha256;
 	Botan::SecureVector<Botan::byte> hash = sha256.process(Botan::X509::PEM_encode(*pub));
 	return string((const char *)hash.begin(), bits / 8);
 }
 
-bool fides::publickey::verify(const std::string &statement, const std::string &signature) {
+bool fides::publickey::verify(const std::string &statement, const std::string &signature) const {
 	auto_ptr<Botan::PK_Verifier> verifier(Botan::get_pk_verifier(*pub, "EMSA1(SHA-512)"));
 	verifier->update((const Botan::byte *)statement.data(), statement.size());
 	Botan::SecureVector<Botan::byte> sig;
@@ -143,16 +142,16 @@ void fides::privatekey::load_private(const std::string &filename) {
 	load_private(in);
 }
 
-void fides::privatekey::save_private(ostream &out) {
+void fides::privatekey::save_private(ostream &out) const {
 	out << Botan::PKCS8::PEM_encode(*priv);
 }
 
-void fides::privatekey::save_private(const std::string &filename) {
+void fides::privatekey::save_private(const std::string &filename) const {
 	ofstream out(filename.c_str());
 	save_private(out);
 }
 
-string fides::privatekey::sign(const std::string &statement) {
+string fides::privatekey::sign(const std::string &statement) const {
 	auto_ptr<Botan::PK_Signer> signer(Botan::get_pk_signer(*priv, "EMSA1(SHA-512)"));
 	Botan::SecureVector<Botan::byte> sig = signer->sign_message((const Botan::byte *)statement.data(), statement.size(), rng);
 	return string((const char *)sig.begin(), (size_t)sig.size());
@@ -186,23 +185,23 @@ string fides::b64decode(const string &in) {
 
 // Certificate functions
 
-fides::certificate::certificate(publickey *key, struct timeval timestamp, const std::string &statement, const std::string &signature): signer(key), timestamp(timestamp), statement(statement), signature(signature) {}
+fides::certificate::certificate(const publickey *key, struct timeval timestamp, const std::string &statement, const std::string &signature): signer(key), timestamp(timestamp), statement(statement), signature(signature) {}
 
-bool fides::certificate::validate() {
+bool fides::certificate::validate() const {
 	string data = signer->fingerprint(256);
 	data += string((const char *)&timestamp, sizeof timestamp);
 	data += statement;
 	return signer->verify(data, signature);
 }
 
-fides::certificate::certificate(privatekey *key, struct timeval timestamp, const std::string &statement): signer(key), timestamp(timestamp), statement(statement) {
+fides::certificate::certificate(const privatekey *key, struct timeval timestamp, const std::string &statement): signer(key), timestamp(timestamp), statement(statement) {
 	string data = signer->fingerprint(256);
 	data += string((const char *)&timestamp, sizeof timestamp);
 	data += statement;
 	signature = key->sign(data);
 }
 
-string fides::certificate::fingerprint(unsigned int bits) {
+string fides::certificate::fingerprint(unsigned int bits) const {
 	return signature.substr(signature.size() - bits / 8);	
 }
 
@@ -250,7 +249,7 @@ static vector<string> dirlist(const string &path) {
 	return files;
 }
 
-void fides::certificate_save(const certificate *cert, const string &filename) {
+void fides::certificate_save(const certificate *cert, const string &filename) const {
 	ofstream file(filename.c_str());
 	file << cert->to_string() << '\n';
 }
@@ -367,10 +366,10 @@ fides::~fides() {
 			delete i->second;
 }
 
-bool fides::fsck() {
+bool fides::fsck() const {
 	int errors = 0;
 
-	for(map<string, certificate *>::iterator i = certs.begin(); i != certs.end(); ++i) {
+	for(map<string, certificate *>::const_iterator i = certs.begin(); i != certs.end(); ++i) {
 		if(!i->second->validate()) {
 			cerr << "Validation of certificate failed: " << i->second->to_string() << '\n';
 			errors++;
@@ -381,16 +380,16 @@ bool fides::fsck() {
 	return !errors;
 }
 
-string fides::get_homedir() {
+string fides::get_homedir() const {
 	return homedir;
 }
 
-bool fides::is_firstrun() {
+bool fides::is_firstrun() const {
 	return firstrun;
 }
 
-fides::publickey *fides::find_key(const string &fingerprint) {
-	map<string, publickey *>::iterator i;
+fides::publickey *fides::find_key(const string &fingerprint) const {
+	map<string, publickey *>::const_iterator i;
 	i = keys.find(fingerprint);
 	if(i != keys.end())
 		return i->second;
@@ -398,9 +397,9 @@ fides::publickey *fides::find_key(const string &fingerprint) {
 		return 0;
 }
 
-vector<fides::certificate *> fides::find_certificates(publickey *signer, const string &regex) {
+vector<fides::certificate *> fides::find_certificates(const publickey *signer, const string &regex) const {
 	vector<certificate *> found;
-	map<string, certificate *>::iterator i;
+	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
 	for(i = certs.begin(); i != certs.end(); ++i) {
 		if(!i->second) {
@@ -414,9 +413,9 @@ vector<fides::certificate *> fides::find_certificates(publickey *signer, const s
 	return found;
 }
 
-vector<fides::certificate *> fides::find_certificates(const string &regex) {
+vector<fides::certificate *> fides::find_certificates(const string &regex) const {
 	vector<certificate *> found;
-	map<string, certificate *>::iterator i;
+	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
 	for(i = certs.begin(); i != certs.end(); ++i)
 		if(regexp.match(i->second->statement))
@@ -424,9 +423,9 @@ vector<fides::certificate *> fides::find_certificates(const string &regex) {
 	return found;
 }
 
-vector<fides::certificate *> fides::find_certificates(publickey *signer) {
+vector<fides::certificate *> fides::find_certificates(const publickey *signer) const {
 	vector<certificate *> found;
-	map<string, certificate *>::iterator i;
+	map<string, certificate *>::const_iterator i;
 	for(i = certs.begin(); i != certs.end(); ++i)
 		if(i->second->signer == signer)
 			found.push_back(i->second);
@@ -461,24 +460,24 @@ void fides::import_all(istream &in) {
 	}
 }
 
-void fides::export_all(ostream &out) {
-	for(map<string, publickey *>::iterator i = keys.begin(); i != keys.end(); ++i)
+void fides::export_all(ostream &out) const {
+	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
 		out << i->second->to_string();
-	for(map<string, certificate *>::iterator i = certs.begin(); i != certs.end(); ++i)
+	for(map<string, certificate *>::const_iterator i = certs.begin(); i != certs.end(); ++i)
 		out << i->second->to_string() << '\n';
 }
 
-void fides::trust(publickey *key) {
+void fides::trust(const publickey *key) {
 	string full = "t+ " + hexencode(key->fingerprint());
 	sign(full);
 }
 
-void fides::distrust(publickey *key) {
+void fides::distrust(const publickey *key) {
 	string full = "t- " + hexencode(key->fingerprint());
 	sign(full);
 }
 
-void fides::dctrust(publickey *key) {
+void fides::dctrust(const publickey *key) {
 	string full = "t0 " + hexencode(key->fingerprint());
 	sign(full);
 }
@@ -670,7 +669,7 @@ void fides::merge(certificate *cert) {
 	certificate_save(cert, certdir + hexencode(cert->fingerprint()));
 }
 
-void fides::auth_stats(const string &statement, int &self, int &trusted, int &all) {
+void fides::auth_stats(const string &statement, int &self, int &trusted, int &all) const {
 	self = trusted = all = 0;
 	vector<certificate *> matches = find_certificates(string("^a[+0-] ") + statement + '$');
 	for(size_t i = 0; i < matches.size(); ++i) {
@@ -688,15 +687,15 @@ void fides::auth_stats(const string &statement, int &self, int &trusted, int &al
 	}
 }
 
-bool fides::is_trusted(publickey *key) {
+bool fides::is_trusted(const publickey *key) const {
 	return key->trust > 0;
 }
 
-bool fides::is_distrusted(publickey *key) {
+bool fides::is_distrusted(const publickey *key) const {
 	return key->trust < 0;
 }
 
-bool fides::is_allowed(const string &statement, publickey *key) {
+bool fides::is_allowed(const string &statement, const publickey *key) const {
 	int self, trusted, all;
 
 	if(key)
@@ -712,7 +711,7 @@ bool fides::is_allowed(const string &statement, publickey *key) {
 		return false;
 }
 
-bool fides::is_denied(const string &statement, publickey *key) {
+bool fides::is_denied(const string &statement, const publickey *key) const {
 	int self, trusted, all;
 
 	if(key)
@@ -746,7 +745,7 @@ void fides::sign(const string &statement) {
 	merge(new certificate(&mykey, latest, statement));
 }
 
-void fides::allow(const string &statement, publickey *key) {
+void fides::allow(const string &statement, const publickey *key) {
 	string full = "a+ ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';
@@ -754,7 +753,7 @@ void fides::allow(const string &statement, publickey *key) {
 	sign(full);
 }
 
-void fides::dontcare(const string &statement, publickey *key) {
+void fides::dontcare(const string &statement, const publickey *key) {
 	string full = "a0 ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';
@@ -762,7 +761,7 @@ void fides::dontcare(const string &statement, publickey *key) {
 	sign(full);
 }
 
-void fides::deny(const string &statement, publickey *key) {
+void fides::deny(const string &statement, const publickey *key) {
 	string full = "a- ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';

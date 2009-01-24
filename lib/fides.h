@@ -89,13 +89,13 @@ class fides {
 
 		int trust;
 		void load(std::istream &in);
-		void save(std::ostream &out);
+		void save(std::ostream &out) const;
 		void load(const std::string &filename);
-		void save(const std::string &filename);
-		bool verify(const std::string &data, const std::string &signature);
-		std::string to_string();
+		void save(const std::string &filename) const;
+		bool verify(const std::string &data, const std::string &signature) const;
+		std::string to_string() const;
 		void from_string(const std::string &in);
-		std::string fingerprint(unsigned int bits = 64);
+		std::string fingerprint(unsigned int bits = 64) const;
 	};
 
 	class privatekey: public publickey {
@@ -106,28 +106,28 @@ class fides {
 		~privatekey();
 
 		void load_private(std::istream &in);
-		void save_private(std::ostream &out);
+		void save_private(std::ostream &out) const;
 		void load_private(const std::string &filename);
-		void save_private(const std::string &filename);
+		void save_private(const std::string &filename) const;
 		void generate(const std::string &field);
 		void generate(unsigned int bits = 224);
-		std::string sign(const std::string &data);
+		std::string sign(const std::string &data) const;
 	};
 
 	class certificate {
 		friend class fides;
-		publickey *signer;
+		const publickey *signer;
 		struct timeval timestamp;
 		std::string statement;
 		std::string signature;
 
 		public:
-		certificate(publickey *pub, struct timeval timestamp, const std::string &statement, const std::string &signature);
-		certificate(privatekey *priv, struct timeval timestamp, const std::string &statement);
+		certificate(const publickey *pub, struct timeval timestamp, const std::string &statement, const std::string &signature);
+		certificate(const privatekey *priv, struct timeval timestamp, const std::string &statement);
 
 		std::string to_string() const;
-		std::string fingerprint(unsigned int bits = 64);
-		bool validate();
+		std::string fingerprint(unsigned int bits = 64) const;
+		bool validate() const;
 	};
 
 	// Fides class itself
@@ -145,43 +145,43 @@ class fides {
 	fides(const std::string &homedir = "");
 	~fides();
 
-	bool is_firstrun();
-	bool fsck();
-	std::string get_homedir();
+	bool is_firstrun() const;
+	bool fsck() const;
+	std::string get_homedir() const;
 
 	void sign(const std::string &statement);
 
-	void allow(const std::string &statement, publickey *key = 0);
-	void dontcare(const std::string &statement, publickey *key = 0);
-	void deny(const std::string &statement, publickey *key = 0);
-	bool is_allowed(const std::string &statement, publickey *key = 0);
-	bool is_denied(const std::string &statement, publickey *key = 0);
+	void allow(const std::string &statement, const publickey *key = 0);
+	void dontcare(const std::string &statement, const publickey *key = 0);
+	void deny(const std::string &statement, const publickey *key = 0);
+	bool is_allowed(const std::string &statement, const publickey *key = 0) const;
+	bool is_denied(const std::string &statement, const publickey *key = 0) const;
 
-	void auth_stats(const std::string &statement, int &self, int &trusted, int &all);
-	void trust(publickey *key);
-	void dctrust(publickey *key);
-	void distrust(publickey *key);
-	bool is_trusted(publickey *key);
-	bool is_distrusted(publickey *key);
-	publickey *find_key(const std::string &fingerprint);
+	void auth_stats(const std::string &statement, int &self, int &trusted, int &all) const;
+	void trust(const publickey *key);
+	void dctrust(const publickey *key);
+	void distrust(const publickey *key);
+	bool is_trusted(const publickey *key) const;
+	bool is_distrusted(const publickey *key) const;
+	publickey *find_key(const std::string &fingerprint) const;
 	void update_trust();
 
-	std::vector<certificate *> find_certificates(publickey *key, const std::string &statement);
-	std::vector<certificate *> find_certificates(const std::string &statement);
-	std::vector<certificate *> find_certificates(publickey *key);
+	std::vector<certificate *> find_certificates(const publickey *key, const std::string &statement) const;
+	std::vector<certificate *> find_certificates(const std::string &statement) const;
+	std::vector<certificate *> find_certificates(const publickey *key) const;
 
 	certificate *import_certificate(const std::string &certificate);
-	std::string export_certificate(const certificate *);
+	std::string export_certificate(const certificate *) const;
 
 	publickey *import_key(const std::string &key);
-	std::string export_key(const publickey *key);
+	std::string export_key(const publickey *key) const;
 
 	void import_all(std::istream &in);
-	void export_all(std::ostream &out);
+	void export_all(std::ostream &out) const;
 
 	certificate *certificate_from_string(const std::string &certificate);
 	certificate *certificate_load(const std::string &filename);
-	void certificate_save(const certificate *cert, const std::string &filename);
+	void certificate_save(const certificate *cert, const std::string &filename) const;
 
 };
 
