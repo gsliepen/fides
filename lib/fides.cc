@@ -33,6 +33,12 @@
 
 #include "fides.h"
 
+#ifndef FIDES_DEBUG
+#define FIDES_DEBUG false
+#endif
+
+#define debug if(FIDES_DEBUG)
+
 using namespace std;
 
 // Global state
@@ -295,7 +301,7 @@ fides::certificate *fides::certificate_from_string(const string &data) {
 // Fides main functions
 
 fides::fides(const string &dir): homedir(dir) {
-	cerr << "Fides initialising\n";
+	debug cerr << "Fides initialising\n";
 
 	// Set homedir to provided directory, or $FIDES_HOME, or $HOME/.fides, or as a last resort $PWD/.fides
 	if(homedir.empty())
@@ -330,7 +336,7 @@ fides::fides(const string &dir): homedir(dir) {
 	}
 	vector<string> files = dirlist(keydir);
 	for(size_t i = 0; i < files.size(); ++i) {
-		cerr << "Loading key " << files[i] << '\n';
+		debug cerr << "Loading key " << files[i] << '\n';
 
 		publickey *key = new publickey();
 		key->load(keydir + files[i]);
@@ -341,10 +347,10 @@ fides::fides(const string &dir): homedir(dir) {
 
 	files = dirlist(certdir);
 	for(size_t i = 0; i < files.size(); ++i) {
-		cerr << "Loading certificate " << files[i] << '\n';
+		debug cerr << "Loading certificate " << files[i] << '\n';
 		certificate *cert = certificate_load(certdir + files[i]);
 		if(false && !cert->validate()) {
-			cerr << "Bad certificate!\n";
+			cerr << "Bad certificate in database: " << cert->to_string() << '\n';
 			continue;
 		}
 		certs[hexdecode(files[i])] = cert;
@@ -358,7 +364,7 @@ fides::fides(const string &dir): homedir(dir) {
 }
 
 fides::~fides() {
-	cerr << "Fides exitting\n";
+	debug cerr << "Fides exitting\n";
 	for(map<string, certificate *>::const_iterator i = certs.begin(); i != certs.end(); ++i)
 		delete i->second;
 	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
@@ -445,7 +451,7 @@ void fides::import_all(istream &in) {
 			if(!line.compare(0, 9, "-----END ")) {
 				fides::publickey *key = new publickey();
 				key->from_string(pem);
-				cerr << "Imported key " << hexencode(key->fingerprint()) << '\n';
+				debug cerr << "Imported key " << hexencode(key->fingerprint()) << '\n';
 				merge(key);
 				is_pem = false;
 			} else {
@@ -455,7 +461,7 @@ void fides::import_all(istream &in) {
 		}
 
 		fides::certificate *cert = certificate_from_string(line);
-		cerr << "Importing certificate " << hexencode(cert->fingerprint()) << '\n';
+		debug cerr << "Importing certificate " << hexencode(cert->fingerprint()) << '\n';
 		merge(cert);
 	}
 }
@@ -511,7 +517,7 @@ void fides::update_trust() {
 		// loop over all keys whose certificates need to be checked
 
 		for(i = tocheck.begin(); i != tocheck.end(); ++i) {
-			cerr << "Trust for key " << hexencode((*i)->fingerprint()) << " set to " << (*i)->trust << '\n';
+			debug cerr << "Trust for key " << hexencode((*i)->fingerprint()) << " set to " << (*i)->trust << '\n';
 
 			// except if this key is not trusted
 
@@ -535,7 +541,7 @@ void fides::update_trust() {
 				// except for keys we already checked
 
 				if(checked.find(other) != checked.end()) {
-					cerr << "Skipping trust certificate for already checked key: " << matches[j]->to_string() << '\n';
+					debug cerr << "Skipping trust certificate for already checked key: " << matches[j]->to_string() << '\n';
 					continue;
 				}
 
@@ -556,7 +562,7 @@ void fides::update_trust() {
 
 void fides::merge(publickey *key) {
 	if(keys.find(key->fingerprint()) != keys.end()) {
-		cerr << "Key already known\n";
+		debug cerr << "Key already known\n";
 		return;
 	}
 
@@ -570,14 +576,14 @@ void fides::merge(certificate *cert) {
 
 	// If we already know this certificate, drop it.
 	if(certs.find(cert->fingerprint()) != certs.end()) {
-		cerr << "Certificate already known\n";
+		debug cerr << "Certificate already known\n";
 		return;
 	}
 
 	// If the certificate does not validate, drop it.
 	if(!cert->validate()) {
 		// TODO: this should not happen, be wary of DoS attacks
-		cerr << "Certificate invalid\n";
+		cerr << "Trying to merge invalid certificate: " << cert->to_string() << '\n';
 		return;
 	}
 
@@ -593,15 +599,15 @@ void fides::merge(certificate *cert) {
 		others = find_certificates(cert->signer, string("^a[+0-] ") + cert->statement.substr(3) + '$');
 		if(others.size()) {
 			if(timercmp(&others[0]->timestamp, &cert->timestamp, >)) {
-				cerr << "Certificate is overruled by a newer certificate\n";
+				debug cerr << "Certificate is overruled by a newer certificate\n";
 				return;
 			}
 			if(timercmp(&others[0]->timestamp, &cert->timestamp, ==)) {
 				// TODO: this should not happen, be wary of DoS attacks
-				cerr << "Certificate has same timestamp as another timestamp!\n";
+				debug cerr << "Certificate has same timestamp as another timestamp!\n";
 				return;
 			}
-			cerr << "Certificate overrules an older certificate!\n";
+			debug cerr << "Certificate overrules an older certificate!\n";
 			// save new cert first
 			certificate_save(cert, certdir + hexencode(cert->fingerprint()));
 			certs[cert->fingerprint()] = cert;
@@ -622,15 +628,15 @@ void fides::merge(certificate *cert) {
 		others = find_certificates(cert->signer, string("^t[+0-] ") + cert->statement.substr(3) + '$');
 		if(others.size()) {
 			if(timercmp(&others[0]->timestamp, &cert->timestamp, >)) {
-				cerr << "Certificate is overruled by a newer certificate\n";
+				debug cerr << "Certificate is overruled by a newer certificate\n";
 				return;
 			}
 			if(timercmp(&others[0]->timestamp, &cert->timestamp, ==)) {
 				// TODO: this should not happen, be wary of DoS attacks
-				cerr << "Certificate has same timestamp as another timestamp!\n";
+				debug cerr << "Certificate has same timestamp as another timestamp!\n";
 				return;
 			}
-			cerr << "Certificate overrules an older certificate!\n";
+			debug cerr << "Certificate overrules an older certificate!\n";
 			// delete old one
 			rename((certdir + hexencode(others[0]->fingerprint())).c_str(), (obsoletedir + hexencode(others[0]->fingerprint())).c_str());
 			certs.erase(others[0]->fingerprint());
@@ -646,15 +652,15 @@ void fides::merge(certificate *cert) {
 	others = find_certificates(cert->signer, string("^") + cert->statement + '$');
 	if(others.size()) {
 		if(timercmp(&others[0]->timestamp, &cert->timestamp, >)) {
-			cerr << "Certificate is overruled by a newer certificate\n";
+			debug cerr << "Certificate is overruled by a newer certificate\n";
 			return;
 		}
 		if(timercmp(&others[0]->timestamp, &cert->timestamp, ==)) {
 			// TODO: this should not happen, be wary of DoS attacks
-			cerr << "Certificate has same timestamp as another timestamp!\n";
+			debug cerr << "Certificate has same timestamp as another timestamp!\n";
 			return;
 		}
-		cerr << "Certificate overrules an older certificate!\n";
+		debug cerr << "Certificate overrules an older certificate!\n";
 		// delete old one
 		rename((certdir + hexencode(others[0]->fingerprint())).c_str(), (obsoletedir + hexencode(others[0]->fingerprint())).c_str());
 		certs.erase(others[0]->fingerprint());
@@ -664,7 +670,7 @@ void fides::merge(certificate *cert) {
 		return;
 	}
 
-	cerr << "Certificate is new\n";
+	debug cerr << "Certificate is new\n";
 	certs[cert->fingerprint()] = cert;
 	certificate_save(cert, certdir + hexencode(cert->fingerprint()));
 }
