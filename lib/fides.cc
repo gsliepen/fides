@@ -267,7 +267,7 @@ fides::certificate *fides::certificate_from_string(const string &data) {
 	if(e == string::npos)
 		throw exception("Invalid certificate");
 	string fingerprint = hexdecode(data.substr(0, e));
-	publickey *signer = find_key(fingerprint);
+	const publickey *signer = find_key(fingerprint);
 	if(!signer)
 		throw exception("Unknown public key");
 	b = e + 1;
@@ -359,9 +359,9 @@ fides::fides(const string &dir): homedir(dir) {
 
 fides::~fides() {
 	cerr << "Fides exitting\n";
-	for(map<string, certificate *>::iterator i = certs.begin(); i != certs.end(); ++i)
+	for(map<string, certificate *>::const_iterator i = certs.begin(); i != certs.end(); ++i)
 		delete i->second;
-	for(map<string, publickey *>::iterator i = keys.begin(); i != keys.end(); ++i)
+	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
 		if(i->second != &mykey)
 			delete i->second;
 }
@@ -397,8 +397,8 @@ fides::publickey *fides::find_key(const string &fingerprint) const {
 		return 0;
 }
 
-vector<fides::certificate *> fides::find_certificates(const publickey *signer, const string &regex) const {
-	vector<certificate *> found;
+vector<const fides::certificate *> fides::find_certificates(const publickey *signer, const string &regex) const {
+	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
 	for(i = certs.begin(); i != certs.end(); ++i) {
@@ -413,8 +413,8 @@ vector<fides::certificate *> fides::find_certificates(const publickey *signer, c
 	return found;
 }
 
-vector<fides::certificate *> fides::find_certificates(const string &regex) const {
-	vector<certificate *> found;
+vector<const fides::certificate *> fides::find_certificates(const string &regex) const {
+	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
 	for(i = certs.begin(); i != certs.end(); ++i)
@@ -423,8 +423,8 @@ vector<fides::certificate *> fides::find_certificates(const string &regex) const
 	return found;
 }
 
-vector<fides::certificate *> fides::find_certificates(const publickey *signer) const {
-	vector<certificate *> found;
+vector<const fides::certificate *> fides::find_certificates(const publickey *signer) const {
+	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
 	for(i = certs.begin(); i != certs.end(); ++i)
 		if(i->second->signer == signer)
@@ -484,7 +484,7 @@ void fides::dctrust(const publickey *key) {
 
 void fides::update_trust() {
 	// clear trust on all keys
-	for(map<string, publickey *>::iterator i = keys.begin(); i != keys.end(); ++i)
+	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
 		i->second->trust = 0;
 
 	// Start by checking all trust certificates from ourself.
@@ -520,7 +520,7 @@ void fides::update_trust() {
 
 			// find all non-zero trust certificates of this key
 
-			vector<certificate *> matches = find_certificates(*i, "^t[+-] ");
+			vector<const certificate *> matches = find_certificates(*i, "^t[+-] ");
 
 			// update trust value of those keys
 
@@ -584,7 +584,7 @@ void fides::merge(certificate *cert) {
 	// TODO: move these regexps to the class?
 	regexp authexp("^a[+0-] ");
 	regexp trustexp("^t[+0-] ");
-	vector<certificate *> others;
+	vector<const certificate *> others;
 
 	// Is this an authorisation cert?
 	if(authexp.match(cert->statement)) {
@@ -671,7 +671,7 @@ void fides::merge(certificate *cert) {
 
 void fides::auth_stats(const string &statement, int &self, int &trusted, int &all) const {
 	self = trusted = all = 0;
-	vector<certificate *> matches = find_certificates(string("^a[+0-] ") + statement + '$');
+	vector<const certificate *> matches = find_certificates(string("^a[+0-] ") + statement + '$');
 	for(size_t i = 0; i < matches.size(); ++i) {
 		char code = matches[i]->statement[1];
 		int diff = 0;

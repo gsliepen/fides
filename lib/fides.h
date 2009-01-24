@@ -136,7 +136,6 @@ class fides {
 	privatekey mykey;
 	std::map<std::string, publickey *> keys;
 	std::map<std::string, certificate *> certs;
-	std::set<publickey *> trustedkeys;
 
 	void merge(certificate *cert);
 	void merge(publickey *key);
@@ -166,14 +165,14 @@ class fides {
 	publickey *find_key(const std::string &fingerprint) const;
 	void update_trust();
 
-	std::vector<certificate *> find_certificates(const publickey *key, const std::string &statement) const;
-	std::vector<certificate *> find_certificates(const std::string &statement) const;
-	std::vector<certificate *> find_certificates(const publickey *key) const;
+	std::vector<const certificate *> find_certificates(const publickey *key, const std::string &statement) const;
+	std::vector<const certificate *> find_certificates(const std::string &statement) const;
+	std::vector<const certificate *> find_certificates(const publickey *key) const;
 
-	certificate *import_certificate(const std::string &certificate);
+	const certificate *import_certificate(const std::string &certificate);
 	std::string export_certificate(const certificate *) const;
 
-	publickey *import_key(const std::string &key);
+	const publickey *import_key(const std::string &key);
 	std::string export_key(const publickey *key) const;
 
 	void import_all(std::istream &in);
