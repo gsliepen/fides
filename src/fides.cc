@@ -223,7 +223,7 @@ static int find(int argc, char *const argv[]) {
 
 	// Find certificates matching statement
 	fides fides;
-	const vector<fides::certificate *> &certs = fides.find_certificates(argv[0]);
+	const vector<const fides::certificate *> &certs = fides.find_certificates(argv[0]);
 	for(size_t i = 0; i < certs.size(); ++i)
 		cout << i << ' ' << certs[i]->to_string() << '\n';
 	return 0;
