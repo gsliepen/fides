@@ -45,7 +45,14 @@ using namespace std;
 
 Botan::AutoSeeded_RNG fides::rng;
 
-// Public key functions
+/// \class fides::publickey
+///
+/// \brief Representation of a public key.
+///
+/// A public key is the counterpart of a private key that is held by some entity.
+/// If we have a public key, we can verify signatures made by the corresponding private key.
+/// Thus, we can ascertain if a statement, if it has been properly signed,
+/// was indeed made by that entity.
 
 fides::publickey::publickey(): pub(0), trust(0) {
 }
@@ -54,7 +61,10 @@ fides::publickey::~publickey() {
 	delete pub;
 }
 
-void fides::publickey::load(istream &in) {
+/// Loads a public key from a stream.
+//
+/// @param in Stream to read from.
+void fides::publickey::load(std::istream &in) {
 	try {
 		Botan::DataSource_Stream source(in);
 		pub = dynamic_cast<Botan::ECDSA_PublicKey *>(Botan::X509::load_key(source));
@@ -63,20 +73,32 @@ void fides::publickey::load(istream &in) {
 	}
 }
 
+/// Loads a public key from a file.
+//
+/// @param filename Name of the file to read the key from.
 void fides::publickey::load(const std::string &filename) {
 	ifstream in(filename.c_str());
 	load(in);
 }
 
-void fides::publickey::save(ostream &out) const {
+/// Saves the public key to a stream.
+//
+/// @param out Stream to write to.
+void fides::publickey::save(std::ostream &out) const {
 	out << to_string();
 }
 
+/// Saves the public key to a file.
+//
+/// @param filename Name of the file to save the key to.
 void fides::publickey::save(const std::string &filename) const {
 	ofstream out(filename.c_str());
 	save(out);
 }
 
+/// Loads a public key from a string.
+//
+/// @param in String containing a public key in textual format.
 void fides::publickey::from_string(const std::string &in) {
 	try {
 		Botan::DataSource_Memory source(in);
@@ -86,10 +108,18 @@ void fides::publickey::from_string(const std::string &in) {
 	}
 }
 
+/// Write the public key to a string.
+//
+/// @return String containing the public key in textual format.
 string fides::publickey::to_string() const {
 	return Botan::X509::PEM_encode(*pub);
 }
 
+/// Get the fingerprint of the public key.
+//
+/// @param bits Number of bits from the fingerprint to return.
+///             The number will be rounded down to the nearest multiple of 8.
+/// @return String containing the fingerprint.
 string fides::publickey::fingerprint(unsigned int bits) const {
 	// TODO: find out if there is a standard way to get a hash of an ECDSA public key
 	Botan::SHA_256 sha256;
@@ -97,6 +127,12 @@ string fides::publickey::fingerprint(unsigned int bits) const {
 	return string((const char *)hash.begin(), bits / 8);
 }
 
+/// Verify the signature of a statement.
+//
+/// @param statement The statement. This is the data that has been signed.
+/// @param signature The signature of the statement.
+/// @return Returns true if the signature is indeed a valid signature, made by this public key, of the statement.
+///         Return false otherwise.
 bool fides::publickey::verify(const std::string &statement, const std::string &signature) const {
 	auto_ptr<Botan::PK_Verifier> verifier(Botan::get_pk_verifier(*pub, "EMSA1(SHA-512)"));
 	verifier->update((const Botan::byte *)statement.data(), statement.size());
@@ -105,7 +141,13 @@ bool fides::publickey::verify(const std::string &statement, const std::string &s
 	return verifier->check_signature(sig);
 }
 
-// Private key functions
+/// \class fides::privatekey
+///
+/// \brief Representation of a public/private keypair.
+///
+/// With a private key we can create a signature of a statement,
+/// so that others who have the corresponding public key
+/// can ascertain that the statement was really made by us.
 
 fides::privatekey::privatekey(): priv(0) {
 }
@@ -115,11 +157,21 @@ fides::privatekey::~privatekey() {
 	pub = 0;
 }
 
+/// Generates a new public/private keypair.
+//
+/// @param field OID of the field to generate a key in.
 void fides::privatekey::generate(const std::string &field) {
 	Botan::EC_Domain_Params domain = Botan::get_EC_Dom_Pars_by_oid(field);
 	pub = priv = new Botan::ECDSA_PrivateKey(rng, domain);
 }
 
+/// Generates a new public/private keypair.
+//
+/// This function uses standard NIST fields.
+/// @param bits Desired size of the keys.
+///             Allowed values are 112, 128, 160, 192, 224, 256, 384 and 521.
+///             Keys less than 160 bits are considered weak.
+///             Keys greater than 224 bits are considered very strong.
 void fides::privatekey::generate(unsigned int bits) {
 	switch(bits) {
 		case 112: return generate("1.3.132.0.6");
@@ -134,7 +186,10 @@ void fides::privatekey::generate(unsigned int bits) {
 	}
 }
 
-void fides::privatekey::load_private(istream &in) {
+/// Loads a private key from a stream.
+//
+/// @param in Stream to read from.
+void fides::privatekey::load_private(std::istream &in) {
 	try {
 		Botan::DataSource_Stream stream(in);
 		pub = priv = dynamic_cast<Botan::ECDSA_PrivateKey *>(Botan::PKCS8::load_key(stream, rng, ""));
@@ -143,20 +198,33 @@ void fides::privatekey::load_private(istream &in) {
 	}
 }
 
+/// Loads a private key from a file.
+//
+/// @param filename Name of the file to read from.
 void fides::privatekey::load_private(const std::string &filename) {
 	ifstream in(filename.c_str());
 	load_private(in);
 }
 
-void fides::privatekey::save_private(ostream &out) const {
+/// Saves the private key to a stream.
+//
+/// @param out Stream to write to.
+void fides::privatekey::save_private(std::ostream &out) const {
 	out << Botan::PKCS8::PEM_encode(*priv);
 }
 
+/// Saves the private key to a file.
+//
+/// @param filename Name of the file to write to.
 void fides::privatekey::save_private(const std::string &filename) const {
 	ofstream out(filename.c_str());
 	save_private(out);
 }
 
+/// Signs a statement with this private key.
+//
+/// @param statement The statement that is to be signed.
+/// @return A string containing the signature.
 string fides::privatekey::sign(const std::string &statement) const {
 	auto_ptr<Botan::PK_Signer> signer(Botan::get_pk_signer(*priv, "EMSA1(SHA-512)"));
 	Botan::SecureVector<Botan::byte> sig = signer->sign_message((const Botan::byte *)statement.data(), statement.size(), rng);
@@ -165,34 +233,61 @@ string fides::privatekey::sign(const std::string &statement) const {
 
 // Base64 and hex encoding/decoding functions
 
-string fides::hexencode(const string &in) {
+/// Hexadecimal encode data.
+//
+/// @param in A string containing raw data.
+/// @return A string containing the hexadecimal encoded data.
+string fides::hexencode(const std::string &in) {
 	Botan::Pipe pipe(new Botan::Hex_Encoder);
 	pipe.process_msg((Botan::byte *)in.data(), in.size());
 	return pipe.read_all_as_string();
 }
 
-string fides::hexdecode(const string &in) {
+/// Decode hexadecimal data.
+//
+/// @param in A string containing hexadecimal encoded data.
+/// @return A string containing the raw data.
+string fides::hexdecode(const std::string &in) {
 	Botan::Pipe pipe(new Botan::Hex_Decoder);
 	pipe.process_msg((Botan::byte *)in.data(), in.size());
 	return pipe.read_all_as_string();
 }
 
-string fides::b64encode(const string &in) {
+/// Base-64 encode data.
+//
+/// @param in A string containing raw data.
+/// @return A string containing the base-64 encoded data.
+string fides::b64encode(const std::string &in) {
 	Botan::Pipe pipe(new Botan::Base64_Encoder);
 	pipe.process_msg((Botan::byte *)in.data(), in.size());
 	return pipe.read_all_as_string();
 }
 
-string fides::b64decode(const string &in) {
+/// Decode base-64 data.
+//
+/// @param in A string containing base-64 encoded data.
+/// @return A string containing the raw data.
+string fides::b64decode(const std::string &in) {
 	Botan::Pipe pipe(new Botan::Base64_Decoder);
 	pipe.process_msg((Botan::byte *)in.data(), in.size());
 	return pipe.read_all_as_string();
 }
 
-// Certificate functions
+/// \class fides::certificate
+///
+/// \brief Representation of a certificate.
 
+/// Construct a certificate from elements of an already existing certificate.
+//
+/// @param key        Public key used to sign the certificate.
+/// @param timestamp  Timestamp of the certificate.
+/// @param statement  Statement of the certificate.
+/// @param signature  Signature of the certificate.
 fides::certificate::certificate(const publickey *key, struct timeval timestamp, const std::string &statement, const std::string &signature): signer(key), timestamp(timestamp), statement(statement), signature(signature) {}
 
+/// Verifies the signature of the certificate.
+//
+/// @return True if the signature is valid, false otherwise.
 bool fides::certificate::validate() const {
 	string data = signer->fingerprint(256);
 	data += string((const char *)&timestamp, sizeof timestamp);
@@ -200,6 +295,11 @@ bool fides::certificate::validate() const {
 	return signer->verify(data, signature);
 }
 
+/// Construct a new certificate and sign it with the private key.
+//
+/// @param key        Private key to sign the certificate with.
+/// @param timestamp  Timestamp of the certificate.
+/// @param statement  Statement of the certificate.
 fides::certificate::certificate(const privatekey *key, struct timeval timestamp, const std::string &statement): signer(key), timestamp(timestamp), statement(statement) {
 	string data = signer->fingerprint(256);
 	data += string((const char *)&timestamp, sizeof timestamp);
@@ -207,10 +307,18 @@ fides::certificate::certificate(const privatekey *key, struct timeval timestamp,
 	signature = key->sign(data);
 }
 
+/// Get the fingerprint of this certificate.
+//
+/// @param bits Number of bits from the fingerprint to return.
+///             The number will be rounded down to the nearest multiple of 8.
+/// @return String containing the fingerprint.
 string fides::certificate::fingerprint(unsigned int bits) const {
 	return signature.substr(signature.size() - bits / 8);	
 }
 
+/// Write the certificate to a string.
+//
+/// @return String containing the certificate in textual format.
 string fides::certificate::to_string() const {
 	string data = fides::hexencode(signer->fingerprint());
 	data += ' ';
@@ -226,7 +334,12 @@ string fides::certificate::to_string() const {
 
 // Utility functions
 
-static vector<string> dirlist(const string &path) {
+/// Return the names of all the files in a directory.
+//
+/// @param path Directory to search for files.
+/// @return A vector of strings with the name of each file in the directory.
+///         The filename does not contain the leading path.
+static vector<string> dirlist(const std::string &path) {
 	vector<string> files;
 
 	DIR *dir = opendir(path.c_str());
@@ -255,19 +368,31 @@ static vector<string> dirlist(const string &path) {
 	return files;
 }
 
-void fides::certificate_save(const certificate *cert, const string &filename) const {
+/// Saves a certificate to a file.
+//
+/// @param cert      Certificate to save.
+/// @param filename  File to save the certificate to.
+void fides::certificate_save(const certificate *cert, const std::string &filename) const {
 	ofstream file(filename.c_str());
 	file << cert->to_string() << '\n';
 }
 
-fides::certificate *fides::certificate_load(const string &filename) {
+/// Loads a certificate from a file.
+//
+/// @param filename  File to save the certificate to.
+/// @return          The certificate.
+fides::certificate *fides::certificate_load(const std::string &filename) {
 	ifstream file(filename.c_str());
 	string data;
 	getline(file, data);
 	return certificate_from_string(data);
 }
 
-fides::certificate *fides::certificate_from_string(const string &data) {
+/// Loads a certificate from a string.
+//
+/// @param data  String containing the certificate in textual form.
+/// @return      The certificate.
+fides::certificate *fides::certificate_from_string(const std::string &data) {
 	size_t b, e;
 	e = data.find(' ', 0);
 	if(e == string::npos)
@@ -298,9 +423,27 @@ fides::certificate *fides::certificate_from_string(const string &data) {
 	return new certificate(signer, timestamp, statement, signature);
 }
 
-// Fides main functions
+/// \class fides
+///
+/// \brief Interaction with a Fides database.
+///
+/// A fides object manages a database of public keys and certificates.
+/// New certificates can be created, certificates can be imported and exported,
+/// and queries can be done on the database.
 
-fides::fides(const string &dir): homedir(dir) {
+
+/// Creates a new handle on a Fides database.
+//
+/// Will load the private key, known public keys and certificates.
+/// After that it will calculate the trust value of all keys.
+///
+/// @param dir Directory where Fides stores the keys and certificates.
+///            If no directory is specified, the following environment variables
+///            are used, in the given order:
+///            - \$FIDES_HOME
+///            - \$HOME/.fides
+///            - \$WPD/.fides
+fides::fides(const std::string &dir): homedir(dir) {
 	debug cerr << "Fides initialising\n";
 
 	// Set homedir to provided directory, or $FIDES_HOME, or $HOME/.fides, or as a last resort $PWD/.fides
@@ -372,6 +515,9 @@ fides::~fides() {
 			delete i->second;
 }
 
+/// Checks the validaty of all certificates.
+//
+/// @return True if all known certificates are valid, false otherwise.
 bool fides::fsck() const {
 	int errors = 0;
 
@@ -386,15 +532,25 @@ bool fides::fsck() const {
 	return !errors;
 }
 
+/// Returns the base directory used by Fides.
+//
+/// @return The home directory.
 string fides::get_homedir() const {
 	return homedir;
 }
 
+/// Tests whether this is the first time Fides has run and has generated new keys.
+//
+/// @return True if this is the first time, false otherwise.
 bool fides::is_firstrun() const {
 	return firstrun;
 }
 
-fides::publickey *fides::find_key(const string &fingerprint) const {
+/// Find the public key corresponding to a given fingerprint.
+//
+/// @param fingerprint String containing a fingerprint.
+/// @return Pointer to the public key corresponding to the fingerprint, or NULL if it was not found.
+fides::publickey *fides::find_key(const std::string &fingerprint) const {
 	map<string, publickey *>::const_iterator i;
 	i = keys.find(fingerprint);
 	if(i != keys.end())
@@ -403,7 +559,12 @@ fides::publickey *fides::find_key(const string &fingerprint) const {
 		return 0;
 }
 
-vector<const fides::certificate *> fides::find_certificates(const publickey *signer, const string &regex) const {
+/// Find all certificates from a give public key and that match a regular expression.
+//
+/// @param signer Public key to match certificates to.
+/// @param regex  Regular expression to match the statement of each certificate to.
+/// @return A vector of certificates that match the criteria.
+vector<const fides::certificate *> fides::find_certificates(const publickey *signer, const std::string &regex) const {
 	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
@@ -419,7 +580,11 @@ vector<const fides::certificate *> fides::find_certificates(const publickey *sig
 	return found;
 }
 
-vector<const fides::certificate *> fides::find_certificates(const string &regex) const {
+/// Find all certificates that match a regular expression.
+//
+/// @param regex  Regular expression to match the statement of each certificate to.
+/// @return A vector of certificates that match the criteria.
+vector<const fides::certificate *> fides::find_certificates(const std::string &regex) const {
 	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
 	regexp regexp(regex);
@@ -429,6 +594,10 @@ vector<const fides::certificate *> fides::find_certificates(const string &regex)
 	return found;
 }
 
+/// Find all certificates from a give public key.
+//
+/// @param signer Public key to match certificates to.
+/// @return A vector of certificates that match the criteria.
 vector<const fides::certificate *> fides::find_certificates(const publickey *signer) const {
 	vector<const certificate *> found;
 	map<string, certificate *>::const_iterator i;
@@ -438,7 +607,10 @@ vector<const fides::certificate *> fides::find_certificates(const publickey *sig
 	return found;
 }
 
-void fides::import_all(istream &in) {
+/// Import public keys and certificates from a stream.
+//
+/// @param in Stream to read from.
+void fides::import_all(std::istream &in) {
 	string line, pem;
 	bool is_pem = false;
 
@@ -466,28 +638,52 @@ void fides::import_all(istream &in) {
 	}
 }
 
-void fides::export_all(ostream &out) const {
+/// Export all public keys and certificates to a stream.
+//
+/// @param out Stream to write to.
+void fides::export_all(std::ostream &out) const {
 	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
 		out << i->second->to_string();
 	for(map<string, certificate *>::const_iterator i = certs.begin(); i != certs.end(); ++i)
 		out << i->second->to_string() << '\n';
 }
 
+/// Trust a public key.
+//
+/// This creates a certificate that says that we trust the given public key.
+/// If a key is trusted, then authorisation certificates from that key are taken into account
+/// when calling functions such as fides::is_allowed().
+///
+/// @param key Public key to trust.
 void fides::trust(const publickey *key) {
 	string full = "t+ " + hexencode(key->fingerprint());
 	sign(full);
 }
 
+/// Distrust a public key.
+//
+/// This creates a certificate that says that we distrust the given public key.
+/// If a key is distrusted, then authorisation certificates from that key are not taken into account
+/// when calling functions such as fides::is_allowed().
+///
+/// @param key Public key to trust.
 void fides::distrust(const publickey *key) {
 	string full = "t- " + hexencode(key->fingerprint());
 	sign(full);
 }
 
+/// Don't care about a public key.
+//
+/// This creates a certificate that says that we neither trust nor distrust the given public key.
+/// This key and certificates created by it are then treated as if we have never trusted nor distrusted this key.
+///
+/// @param key Public key to trust.
 void fides::dctrust(const publickey *key) {
 	string full = "t0 " + hexencode(key->fingerprint());
 	sign(full);
 }
 
+/// Recalculate the trust value of all known public keys.
 void fides::update_trust() {
 	// clear trust on all keys
 	for(map<string, publickey *>::const_iterator i = keys.begin(); i != keys.end(); ++i)
@@ -560,6 +756,9 @@ void fides::update_trust() {
 	}	
 }	
 
+/// Merges a public key into the database.
+//
+/// @param key The public key to merge.
 void fides::merge(publickey *key) {
 	if(keys.find(key->fingerprint()) != keys.end()) {
 		debug cerr << "Key already known\n";
@@ -570,6 +769,15 @@ void fides::merge(publickey *key) {
 	key->save(keydir + hexencode(key->fingerprint()));
 }
 
+/// Merges a certificate into the database.
+//
+/// The database is searched to find if there are certificates from the same signer
+/// with similar statements.
+/// If the given certificate is similar to another one in our database,
+/// then the certificate with the newer timestamp wins and will be allowed in the database,
+/// the older certificate will be removed.
+///
+/// @param cert The certificate to merge.
 void fides::merge(certificate *cert) {
 	// TODO: check if cert is already in database
 	// TODO: check if cert obsoletes other certs
@@ -675,7 +883,17 @@ void fides::merge(certificate *cert) {
 	certificate_save(cert, certdir + hexencode(cert->fingerprint()));
 }
 
-void fides::auth_stats(const string &statement, int &self, int &trusted, int &all) const {
+/// Calculates whether a statement is allowed or denied.
+//
+/// @param statement The statement to calculate the authorisation values for.
+/// @param self      Will be set to 1 if we allow the statement,
+///                  0 if we neither allowed nor denied it,
+///                  or -1 if we denied it.
+/// @param trusted   Will be positive if the majority of the trusted public keys
+///                  gave a positive authorisation, 0 if there is a tie,
+///                  or negative if the majority gave a negative authorisation.
+/// @param all       Same as trusted but for all public keys.
+void fides::auth_stats(const std::string &statement, int &self, int &trusted, int &all) const {
 	self = trusted = all = 0;
 	vector<const certificate *> matches = find_certificates(string("^a[+0-] ") + statement + '$');
 	for(size_t i = 0; i < matches.size(); ++i) {
@@ -693,15 +911,28 @@ void fides::auth_stats(const string &statement, int &self, int &trusted, int &al
 	}
 }
 
+/// Tests whether the given public key is trusted.
+//
+/// @param key The public key to test.
+/// @return True if the key is explicitly trusted, false otherwise.
 bool fides::is_trusted(const publickey *key) const {
 	return key->trust > 0;
 }
 
+/// Tests whether the given public key is distrusted.
+//
+/// @param key The public key to test.
+/// @return True if the key is explicitly distrusted, false otherwise.
 bool fides::is_distrusted(const publickey *key) const {
 	return key->trust < 0;
 }
 
-bool fides::is_allowed(const string &statement, const publickey *key) const {
+/// Tests whether the given statement is allowed.
+//
+/// @param statement The statement to test.
+/// @param key       The public key to test.
+/// @return True if the statement is allowed for the given key, false otherwise.
+bool fides::is_allowed(const std::string &statement, const publickey *key) const {
 	int self, trusted, all;
 
 	if(key)
@@ -717,7 +948,12 @@ bool fides::is_allowed(const string &statement, const publickey *key) const {
 		return false;
 }
 
-bool fides::is_denied(const string &statement, const publickey *key) const {
+/// Tests whether the given statement is denied.
+//
+/// @param statement The statement to test.
+/// @param key       The public key to test.
+/// @return True if the statement is denied for the given key, false otherwise.
+bool fides::is_denied(const std::string &statement, const publickey *key) const {
 	int self, trusted, all;
 
 	if(key)
@@ -733,7 +969,10 @@ bool fides::is_denied(const string &statement, const publickey *key) const {
 		return false;
 }
 
-void fides::sign(const string &statement) {
+/// Creates a certificate for the given statement.
+//
+/// @param statement The statement to create a certificate for.
+void fides::sign(const std::string &statement) {
 	// Try to set "latest" to now, but ensure monoticity
 	struct timeval now;
 	gettimeofday(&now, 0);
@@ -751,7 +990,7 @@ void fides::sign(const string &statement) {
 	merge(new certificate(&mykey, latest, statement));
 }
 
-void fides::allow(const string &statement, const publickey *key) {
+void fides::allow(const std::string &statement, const publickey *key) {
 	string full = "a+ ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';
@@ -759,7 +998,7 @@ void fides::allow(const string &statement, const publickey *key) {
 	sign(full);
 }
 
-void fides::dontcare(const string &statement, const publickey *key) {
+void fides::dontcare(const std::string &statement, const publickey *key) {
 	string full = "a0 ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';
@@ -767,7 +1006,7 @@ void fides::dontcare(const string &statement, const publickey *key) {
 	sign(full);
 }
 
-void fides::deny(const string &statement, const publickey *key) {
+void fides::deny(const std::string &statement, const publickey *key) {
 	string full = "a- ";
 	if(key)
 		full += hexencode(key->fingerprint()) + ' ';

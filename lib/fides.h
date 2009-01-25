@@ -43,6 +43,12 @@ class fides {
 	static std::string hexencode(const std::string &in);
 	static std::string hexdecode(const std::string &in);
 
+	/// Compiled regular expression.
+
+	/// This class holds a compiled regular expression,
+	/// which can be used to match arbitrary strings to.
+	/// It is a wrapper for the POSIX regex functions
+	/// regcomp() and regexec().
 	class regexp {
 		regex_t comp;
 
@@ -53,10 +59,22 @@ class fides {
 		static const int NEWLINE = REG_NEWLINE;
 
 		static const int NOTBOL = REG_NOTBOL;
-		static const int NOTEAL = REG_NOTEOL;
+		static const int NOTEOL = REG_NOTEOL;
 
+		/// Construct a compiled regular expression.
+		///
+		/// @param exp    Regular expression to compile.
+		/// @param cflags Bitwise OR of options to apply when compiling the regular expression:
+		///               - fides::regexp::EXTENDED
+		///                 Use POSIX Extended Regular Expression syntax when interpreting exp.
+		///               - fides::regexp::ICASE
+		///                 Make the expression case-insensitive.
+		///               - fides::regexp::NOSUB
+		///                 Disable support for substring addressing.
+		///               - fides::regexp::NEWLINE
+		///                 Do not treat the newline character as the start or end of a line.
 		regexp(const std::string &exp, int cflags = 0) {
-			int err = regcomp(&comp, exp.c_str(), cflags | NOSUB);
+			int err = regcomp(&comp, exp.c_str(), cflags);
 			if(err)
 				throw exception("Could not compile regular expression");
 		}
@@ -65,12 +83,19 @@ class fides {
 			regfree(&comp);
 		}
 
+		/// Test whether a string matches the regular expression.
+		///
+		/// @param in     String to test.
+		/// @param eflags Bitwise OR of options to apply when matching the string:
+		///               - fides::regexp::NOTBOL
+		///                 Do not treat the start of the string as the start of a line.
+		///               - fides::regexp::NOTEOL
+		///                 Do not treat the end of the string as the end of a line.
+		/// @return True if the string matches the regular expression, false otherwise.
 		bool match(const std::string &in, int eflags = 0) {
 			return regexec(&comp, in.c_str(), 0, 0, eflags) == 0;
 		}
 	};
-
-	// Exception class
 
 	class exception: public std::runtime_error {
                 public:
@@ -116,6 +141,8 @@ class fides {
 
 	class certificate {
 		friend class fides;
+
+		/// Public key that signed this certificate.
 		const publickey *signer;
 		struct timeval timestamp;
 		std::string statement;
