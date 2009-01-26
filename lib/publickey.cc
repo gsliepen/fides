@@ -32,8 +32,8 @@
 
 using namespace std;
 
-namespace fides {
-	/// \class publickey
+namespace Fides {
+	/// \class PublicKey
 	///
 	/// \brief Representation of a public key.
 	///
@@ -42,29 +42,29 @@ namespace fides {
 	/// Thus, we can ascertain if a statement, if it has been properly signed,
 	/// was indeed made by that entity.
 
-	publickey::publickey(): pub(0), trust(0) {
+	PublicKey::PublicKey(): pub(0), trust(0) {
 	}
 
-	publickey::~publickey() {
+	PublicKey::~PublicKey() {
 		delete pub;
 	}
 
 	/// Loads a public key from a stream.
 	//
 	/// @param in Stream to read from.
-	void publickey::load(std::istream &in) {
+	void PublicKey::load(std::istream &in) {
 		try {
 			Botan::DataSource_Stream source(in);
 			pub = dynamic_cast<Botan::ECDSA_PublicKey *>(Botan::X509::load_key(source));
 		} catch(Botan::Exception &e) {
-			throw fides::exception(e.what());
+			throw Fides::exception(e.what());
 		}
 	}
 
 	/// Loads a public key from a file.
 	//
 	/// @param filename Name of the file to read the key from.
-	void publickey::load(const std::string &filename) {
+	void PublicKey::load(const std::string &filename) {
 		ifstream in(filename.c_str());
 		load(in);
 	}
@@ -72,14 +72,14 @@ namespace fides {
 	/// Saves the public key to a stream.
 	//
 	/// @param out Stream to write to.
-	void publickey::save(std::ostream &out) const {
+	void PublicKey::save(std::ostream &out) const {
 		out << to_string();
 	}
 
 	/// Saves the public key to a file.
 	//
 	/// @param filename Name of the file to save the key to.
-	void publickey::save(const std::string &filename) const {
+	void PublicKey::save(const std::string &filename) const {
 		ofstream out(filename.c_str());
 		save(out);
 	}
@@ -87,19 +87,19 @@ namespace fides {
 	/// Loads a public key from a string.
 	//
 	/// @param in String containing a public key in textual format.
-	void publickey::from_string(const std::string &in) {
+	void PublicKey::from_string(const std::string &in) {
 		try {
 			Botan::DataSource_Memory source(in);
 			pub = dynamic_cast<Botan::ECDSA_PublicKey *>(Botan::X509::load_key(source));
 		} catch(Botan::Exception &e) {
-			throw fides::exception(e.what());
+			throw Fides::exception(e.what());
 		}
 	}
 
 	/// Write the public key to a string.
 	//
 	/// @return String containing the public key in textual format.
-	string publickey::to_string() const {
+	string PublicKey::to_string() const {
 		return Botan::X509::PEM_encode(*pub);
 	}
 
@@ -108,7 +108,7 @@ namespace fides {
 	/// @param bits Number of bits from the fingerprint to return.
 	///             The number will be rounded down to the nearest multiple of 8.
 	/// @return String containing the fingerprint.
-	string publickey::fingerprint(unsigned int bits) const {
+	string PublicKey::fingerprint(unsigned int bits) const {
 		// TODO: find out if there is a standard way to get a hash of an ECDSA public key
 		Botan::SHA_256 sha256;
 		Botan::SecureVector<Botan::byte> hash = sha256.process(Botan::X509::PEM_encode(*pub));
@@ -121,7 +121,7 @@ namespace fides {
 	/// @param signature The signature of the statement.
 	/// @return Returns true if the signature is indeed a valid signature, made by this public key, of the statement.
 	///         Return false otherwise.
-	bool publickey::verify(const std::string &statement, const std::string &signature) const {
+	bool PublicKey::verify(const std::string &statement, const std::string &signature) const {
 		auto_ptr<Botan::PK_Verifier> verifier(Botan::get_pk_verifier(*pub, "EMSA1(SHA-512)"));
 		verifier->update((const Botan::byte *)statement.data(), statement.size());
 		Botan::SecureVector<Botan::byte> sig;

@@ -41,7 +41,7 @@
 
 using namespace std;
 
-namespace fides {
+namespace Fides {
 	// Base64 and hex encoding/decoding functions
 
 	/// Hexadecimal encode data.

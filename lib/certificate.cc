@@ -22,8 +22,8 @@
 
 using namespace std;
 
-namespace fides {
-	/// \class fides::certificate
+namespace Fides {
+	/// \class Certificate
 	///
 	/// \brief Representation of a certificate.
 
@@ -33,12 +33,12 @@ namespace fides {
 	/// @param timestamp  Timestamp of the certificate.
 	/// @param statement  Statement of the certificate.
 	/// @param signature  Signature of the certificate.
-	certificate::certificate(const publickey *key, struct timeval timestamp, const std::string &statement, const std::string &signature): signer(key), timestamp(timestamp), statement(statement), signature(signature) {}
+	Certificate::Certificate(const PublicKey *key, struct timeval timestamp, const std::string &statement, const std::string &signature): signer(key), timestamp(timestamp), statement(statement), signature(signature) {}
 
 	/// Verifies the signature of the certificate.
 	//
 	/// @return True if the signature is valid, false otherwise.
-	bool certificate::validate() const {
+	bool Certificate::validate() const {
 		string data = signer->fingerprint(256);
 		data += string((const char *)&timestamp, sizeof timestamp);
 		data += statement;
@@ -50,7 +50,7 @@ namespace fides {
 	/// @param key        Private key to sign the certificate with.
 	/// @param timestamp  Timestamp of the certificate.
 	/// @param statement  Statement of the certificate.
-	certificate::certificate(const privatekey *key, struct timeval timestamp, const std::string &statement): signer(key), timestamp(timestamp), statement(statement) {
+	Certificate::Certificate(const PrivateKey *key, struct timeval timestamp, const std::string &statement): signer(key), timestamp(timestamp), statement(statement) {
 		string data = signer->fingerprint(256);
 		data += string((const char *)&timestamp, sizeof timestamp);
 		data += statement;
@@ -62,14 +62,14 @@ namespace fides {
 	/// @param bits Number of bits from the fingerprint to return.
 	///             The number will be rounded down to the nearest multiple of 8.
 	/// @return String containing the fingerprint.
-	string certificate::fingerprint(unsigned int bits) const {
+	string Certificate::fingerprint(unsigned int bits) const {
 		return signature.substr(signature.size() - bits / 8);	
 	}
 
 	/// Write the certificate to a string.
 	//
 	/// @return String containing the certificate in textual format.
-	string certificate::to_string() const {
+	string Certificate::to_string() const {
 		string data = hexencode(signer->fingerprint());
 		data += ' ';
 		char ts[100];

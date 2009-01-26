@@ -23,14 +23,14 @@
 #include <botan/botan.h>
 #include <botan/ecdsa.h>
 	
-namespace fides {
-	class publickey {
+namespace Fides {
+	class PublicKey {
 		protected:
 		Botan::ECDSA_PublicKey *pub;
 
 		public:
-		publickey();
-		~publickey();
+		PublicKey();
+		~PublicKey();
 
 		int trust;
 		void load(std::istream &in);

@@ -1,4 +1,4 @@
-/* certificate.h - Fides certificate class
+/* Certificate.h - Fides Certificate class
    Copyright (C) 2008-2009  Guus Sliepen <guus@tinc-vpn.org>
   
    Fides is free software; you can redistribute it and/or modify
@@ -23,19 +23,19 @@
 #include "publickey.h"
 #include "privatekey.h"
 
-namespace fides {
-	class certificate {
-		friend class fides;
+namespace Fides {
+	class Certificate {
+		friend class Manager;
 
 		/// Public key that signed this certificate.
-		const publickey *signer;
+		const PublicKey *signer;
 		struct timeval timestamp;
 		std::string statement;
 		std::string signature;
 
 		public:
-		certificate(const publickey *pub, struct timeval timestamp, const std::string &statement, const std::string &signature);
-		certificate(const privatekey *priv, struct timeval timestamp, const std::string &statement);
+		Certificate(const PublicKey *pub, struct timeval timestamp, const std::string &statement, const std::string &signature);
+		Certificate(const PrivateKey *priv, struct timeval timestamp, const std::string &statement);
 
 		std::string to_string() const;
 		std::string fingerprint(unsigned int bits = 64) const;

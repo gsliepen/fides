@@ -1,4 +1,4 @@
-/* privatekey.h - Fides private key class
+/* PrivateKey.h - Fides private key class
    Copyright (C) 2008-2009  Guus Sliepen <guus@tinc-vpn.org>
   
    Fides is free software; you can redistribute it and/or modify
@@ -23,13 +23,13 @@
 #include <botan/ecdsa.h>
 #include "publickey.h"
 
-namespace fides {
-	class privatekey: public publickey {
+namespace Fides {
+	class PrivateKey: public PublicKey {
 		Botan::ECDSA_PrivateKey *priv;
 
 		public:
-		privatekey();
-		~privatekey();
+		PrivateKey();
+		~PrivateKey();
 
 		void load_private(std::istream &in);
 		void save_private(std::ostream &out) const;

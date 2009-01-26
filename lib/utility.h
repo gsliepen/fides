@@ -23,7 +23,7 @@
 #include <vector>
 #include <regex.h>
 
-namespace fides {
+namespace Fides {
 	class regexp {
 		regex_t comp;
 
@@ -40,13 +40,13 @@ namespace fides {
 		///
 		/// @param exp    Regular expression to compile.
 		/// @param cflags Bitwise OR of options to apply when compiling the regular expression:
-		///               - fides::regexp::EXTENDED
+		///               - Fides::regexp::EXTENDED
 		///                 Use POSIX Extended Regular Expression syntax when interpreting exp.
-		///               - fides::regexp::ICASE
+		///               - Fides::regexp::ICASE
 		///                 Make the expression case-insensitive.
-		///               - fides::regexp::NOSUB
+		///               - Fides::regexp::NOSUB
 		///                 Disable support for substring addressing.
-		///               - fides::regexp::NEWLINE
+		///               - Fides::regexp::NEWLINE
 		///                 Do not treat the newline character as the start or end of a line.
 		regexp(const std::string &exp, int cflags = 0) {
 			int err = regcomp(&comp, exp.c_str(), cflags);
@@ -62,9 +62,9 @@ namespace fides {
 		///
 		/// @param in     String to test.
 		/// @param eflags Bitwise OR of options to apply when matching the string:
-		///               - fides::regexp::NOTBOL
+		///               - Fides::regexp::NOTBOL
 		///                 Do not treat the start of the string as the start of a line.
-		///               - fides::regexp::NOTEOL
+		///               - Fides::regexp::NOTEOL
 		///                 Do not treat the end of the string as the end of a line.
 		/// @return True if the string matches the regular expression, false otherwise.
 		bool match(const std::string &in, int eflags = 0) {
