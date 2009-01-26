@@ -79,7 +79,7 @@ static void version(ostream &out = cout) {
 }
 
 static int init() {
-	fides fides;
+	fides::fides fides;
 	if(fides.is_firstrun()) {
 		cout << "New keys generated in " << fides.get_homedir() << '\n';
 	} else {
@@ -92,7 +92,7 @@ static int is_trusted(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides::publickey *key = fides.find_key(fides::hexdecode(argv[0]));
 	if(!key) {
 		cerr << "Unknown key!\n";
@@ -105,7 +105,7 @@ static int is_distrusted(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides::publickey *key = fides.find_key(fides::hexdecode(argv[0]));
 	if(!key) {
 		cerr << "Unknown key!\n";
@@ -118,7 +118,7 @@ static int trust(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides::publickey *key = fides.find_key(fides::hexdecode(argv[0]));
 	if(key)
 		fides.trust(key);
@@ -133,7 +133,7 @@ static int dctrust(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides::publickey *key = fides.find_key(fides::hexdecode(argv[0]));
 	if(key)
 		fides.dctrust(key);
@@ -148,7 +148,7 @@ static int distrust(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides::publickey *key = fides.find_key(fides::hexdecode(argv[0]));
 	if(key)
 		fides.distrust(key);
@@ -163,7 +163,7 @@ static int sign(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides.sign(argv[0]);
 	return 0;
 }
@@ -172,7 +172,7 @@ static int allow(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides.allow(argv[0]);
 	return 0;
 }
@@ -181,7 +181,7 @@ static int dontcare(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides.dontcare(argv[0]);
 	return 0;
 }
@@ -190,13 +190,13 @@ static int deny(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	fides.deny(argv[0]);
 	return 0;
 }
 
 static int import(int argc, char *const argv[]) {
-	fides fides;
+	fides::fides fides;
 	
 	if(argc) {
 		ifstream in(argv[0]);
@@ -207,7 +207,7 @@ static int import(int argc, char *const argv[]) {
 }
 
 static int exprt(int argc, char *const argv[]) {
-	fides fides;
+	fides::fides fides;
 
 	if(argc) {
 		ofstream out(argv[0]);
@@ -222,7 +222,7 @@ static int find(int argc, char *const argv[]) {
 		return EX_USAGE;
 
 	// Find certificates matching statement
-	fides fides;
+	fides::fides fides;
 	const vector<const fides::certificate *> &certs = fides.find_certificates(argv[0]);
 	for(size_t i = 0; i < certs.size(); ++i)
 		cout << i << ' ' << certs[i]->to_string() << '\n';
@@ -233,7 +233,7 @@ static int is_allowed(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	return fides.is_allowed(argv[0]) ? 0 : 1;
 }
 
@@ -241,7 +241,7 @@ static int is_denied(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	return fides.is_denied(argv[0]) ? 0 : 1;
 }
 
@@ -249,7 +249,7 @@ static int test(int argc, char *const argv[]) {
 	if(argc < 1)
 		return EX_USAGE;
 
-	fides fides;
+	fides::fides fides;
 	int self, trusted, all;
 	fides.auth_stats(argv[0], self, trusted, all);
 	cout << "Self: " << self << ", trusted: " << trusted << ", all: " << all << '\n';
@@ -257,7 +257,7 @@ static int test(int argc, char *const argv[]) {
 }
 
 static int fsck() {
-	fides fides;
+	fides::fides fides;
 	if(fides.fsck()) {
 		cout << "Everything OK\n";
 		return 0;
