@@ -1,0 +1,48 @@
+- Handle compromises
+  - Key revocation & distribution
+  - Recalculate trust
+  - Notification of trust changes?
+  - Format of revocation certs
+  - Allow third parties to issue "I think key X is compromised" certs?
+
+- Handle misuse
+  - Peer issuing millions of certificates
+
+- Handle renewal
+  - New keys
+    - Linked to old keys
+  - Upgrade certificates
+    - Issue with new key but old timestamps?
+  - Crypto agility (public key algo, digest algo)
+
+- Synchronisation
+
+- Public fides servers a la PGP?
+
+- Link fides keys/certs with other crypto ways?
+  - Standard cert for eg. linking fides key with SSH key?
+  - Or fides key/cert with X.509 cert?
+  - Or with plain identities like usernames, or email addresses, etc?
+    - Something like PGP uids?
+
+- What to do when exact time is not known when generating certs?
+  - Use time from newest cert + 1 ms?
+  - Explicit relation to old certs?
+
+- Keep obsoleted certs around, or is this a security risk?
+
+- Delegate keys/certs?
+
+- Standardise certificate format
+  - Binary vs. text?
+  - If text, how to handle special characters? Escape?
+  - Version number?
+  - One or more digests allowed?
+  - Include digest type?
+  - Standard way of indicating trust/notrust, allow/deny type certificates
+  - Be able to handle new certificate types in the future?
+    - IANA?
+
+- Show it to cryptography@metzdowd.com
+  - Prepare for penis-shaped sound waves
+
