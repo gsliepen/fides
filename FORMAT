@@ -1,0 +1,67 @@
+Certificate format
+------------------
+
+Currently, the format is in ASCII:
+
+<KEYID> <TIMESTAMP> <DIGEST> <STATEMENT>
+
+KEYID:		hex-encoded fingerprint of the key that was used to create the digest
+TIMESTAMP:	UNIX timestamp of time of certificate creation, in decimal floating point format, with microsecond resolution (ie, 6 digits after the decimal)
+DIGEST:		base64 encoded digest of "<KEYID><TIMESTAMP><STATEMENT>", ie. the certificate without the digest and without the spaces between the parts.
+STATEMENT:	can be anything as long as it doesn't include a newline, linefeed or null-byte.
+
+The STATEMENT can in principle be anything, but to make fides useful and to
+allow programs to quickly find out if something is "allowed" or "trusted", the
+first word can indicate the type of statement. Currently, the following types
+are implemented: 
+
+a+	Allow whatever follows
+a-      Deny
+a0      Don't care (neither explicitly allow or deny)
+
+t+      Trust whatever follows
+t-      Distrust
+t0      Don't care (neither explicitly trust or distrust)
+
+For example, a program that wants simple distributed access control, just
+allowing or denying access to specific users, can work with certificates with
+statements like "a+ Alice", "a0 Bob", "a- Mallory". This would allow Alice
+access, does not care about Bob (so use default access level for him), and
+denies Mallory.
+
+When asking Fides "is Carol allowed?", it would find all the certificates from
+trusted peers, which a+ Carol or a- Carol, and count the number of a+ and
+number of a- certificates. If there are more a+ than a- certificates, the
+answer of Fides would be "yes", otherwise "no".
+
+The trust statements are intended for specifying trust of the Fides keys of
+peers. Currently, it implements a crude web of trust, where a Fides instance
+trusts/distrust keys based on t+/t- certificates it issued itself, and then
+checks if there are more keys trusted by those Fides instances it trusts, and
+so on. Keys who are trusted or distrusted early in this trust path discovery
+process are never marked as distrusted or trusted later in this process.
+
+The exact way trust and authorisation is calculated might not be optimal and
+may be changed later.
+
+Future certificate types might be:
+
+revoke	Revocation certificate (followed by a keyID?)
+subkey	Links a strong key to a weaker one, like in PGP
+newkey	Links a key to a new one, obsoletes old key at same time?
+person	Link a key to a person (name, date of birth, passport number?)
+email	Link a key to an email address (like a PGP uid)
+ssh	Link a key to an SSH key
+host	Link a key to a hostname
+x509	Link a key to a X.509 certificate
+pgp	Link a key to a PGP key
+
+until	Followed by a timestamp and a statement, limits that statement until a certain time.
+ephemeral	Followed by a statement, means this certificate is not to be made public,
+		and only holds for the duration of one session.
+		Ie, this certificate should not be stored in the database.
+		For example, this can be used to sign a session key.
+
+Most of these certificate types should also have +, 0 or - postfixes, to revoke
+or negate certain statements.
+
