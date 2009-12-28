@@ -15,6 +15,7 @@
    License along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstdio>
 #include <string>
 
 #include "certificate.h"
@@ -81,4 +82,31 @@ namespace Fides {
 		data += statement;
 		return data;
 	}
+}
+
+// C bindings
+
+fides_certificate *fides_certificate_new(const fides_publickey *pub, struct timeval timestamp, const char *statement, const char *signature) {
+	return new Fides::Certificate(pub, timestamp, statement, signature);
+}
+
+fides_certificate *fides_certificate_new_priv(const fides_privatekey *priv, struct timeval timestamp, const char *statement) {
+	return new Fides::Certificate(priv, timestamp, statement);
+}
+
+void fides_certificate_free(fides_certificate *c) {
+	delete c;
+}
+
+
+char *fides_certificate_to_string(fides_certificate *c) {
+	return strdup(c->to_string().c_str());
+}
+
+char *fides_certificate_fingerprint(fides_certificate *c, unsigned int bits) {
+	return strdup(c->fingerprint(bits).c_str());
+}
+
+bool fides_certificate_validate(fides_certificate *c) {
+	return c->validate();
 }

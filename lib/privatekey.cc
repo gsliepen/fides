@@ -124,3 +124,41 @@ namespace Fides {
 		return string((const char *)sig.begin(), (size_t)sig.size());
 	}
 }
+
+// C bindings
+
+fides_privatekey *fides_privatekey_new() {
+	return new Fides::PrivateKey();
+}
+
+void fides_privatekey_free(fides_privatekey *k) {
+	delete k;
+}
+
+void fides_privatekey_load_public(fides_privatekey *k, const char *filename) {
+	k->load(filename);
+}
+
+void fides_privatekey_save_public(fides_privatekey *k, const char *filename) {
+	k->save(filename);
+}
+
+void fides_privatekey_load(fides_privatekey *k, const char *filename) {
+	k->load_private(filename);
+}
+
+void fides_privatekey_save(fides_privatekey *k, const char *filename) {
+	k->save_private(filename);
+}
+
+void fides_privatekey_generate_field(fides_privatekey *k, const char *field) {
+	k->generate(field);
+}
+
+void fides_privatekey_generate(fides_privatekey *k, unsigned int bits) {
+	k->generate(bits);
+}
+
+char *fides_privatekey_sign(fides_privatekey *k, const char *data) {
+	return strdup(k->sign(data).c_str());
+}

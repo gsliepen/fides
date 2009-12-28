@@ -18,15 +18,16 @@
 #ifndef __FIDES_H__
 #define __FIDES_H__
 
-#include <stdexcept>
 #include <sys/time.h>
-#include <map>
-#include <vector>
-
 #include "certificate.h"
 #include "publickey.h"
 #include "privatekey.h"
 #include "utility.h"
+
+#ifdef __cplusplus
+#include <stdexcept>
+#include <map>
+#include <vector>
 
 namespace Fides {
 	class exception: public std::runtime_error {
@@ -95,5 +96,56 @@ namespace Fides {
 
 	};
 }
+
+extern "C" {
+typedef Fides::Manager fides_manager;
+#else
+#include <stdbool.h>
+#include <stdio.h>
+typedef struct fides_manager fides_manager;
+#endif
+
+extern fides_manager *fides_init_manager(char *homedir);
+extern void fides_exit_manager(fides_manager *m);
+
+extern bool fides_is_firstrun(fides_manager *m);
+extern bool fides_fsck(fides_manager *m);
+extern char *fides_get_homedir(fides_manager *m);
+
+extern void fides_sign(fides_manager *m, const char *statement);
+
+extern void fides_allow(fides_manager *m, const char *statement, const fides_publickey *key);
+extern void fides_dontcare(fides_manager *m, const char *statement, const fides_publickey *key);
+extern void fides_deny(fides_manager *m, const char *statement, const fides_publickey *key);
+extern bool fides_is_allowed(fides_manager *m, const char *statement, const fides_publickey *key);
+extern bool fides_is_denied(fides_manager *m, const char *statement, const fides_publickey *key);
+
+extern void fides_auth_stats(fides_manager *m, const char *statement, int *self, int *trusted, int *all);
+extern void fides_trust(fides_manager *m, const fides_publickey *key);
+extern void fides_dctrust(fides_manager *m, const fides_publickey *key);
+extern void fides_distrust(fides_manager *m, const fides_publickey *key);
+extern bool fides_is_trusted(fides_manager *m, const fides_publickey *key);
+extern bool fides_is_distrusted(fides_manager *m, const fides_publickey *key);
+extern fides_publickey *fides_find_key(fides_manager *m, const char *fingerprint);
+extern void fides_update_trust(fides_manager *m);
+
+extern fides_certificate **find_certificates(fides_manager *m, const fides_publickey *key, const char *statement);
+
+extern const fides_certificate *fides_import_certificate(fides_manager *m, const char *certificate);
+extern char *fides_export_certificate(fides_manager *m, const fides_certificate *certificcate);
+
+extern const fides_publickey *fides_import_key(fides_manager *m, const char *key);
+extern char *fides_export_key(fides_manager *m, const fides_publickey *key);
+
+extern void fides_import_all(fides_manager *m, FILE *in);
+extern void fides_export_all(fides_manager *m, FILE *out);
+
+extern fides_certificate *fides_certificate_from_string(fides_manager *m, const char *certificate);
+extern fides_certificate *fides_certificate_load(fides_manager *m, const char *filename);
+extern void fides_certificate_save(fides_manager *m, const fides_certificate *cert, const char *filename);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -681,3 +681,130 @@ namespace Fides {
 		sign(full);
 	}
 }
+
+// C bindings
+
+fides_manager *fides_init_manager(char *homedir) {
+	return new Fides::Manager(homedir);
+}
+
+void fides_exit_manager(fides_manager *m) {
+	delete m;
+}
+
+bool fides_is_firstrun(fides_manager *m) {
+	return m->is_firstrun();
+}
+
+bool fides_fsck(fides_manager *m) {
+	return m->fsck();
+}
+
+char *fides_get_homedir(fides_manager *m) {
+	return strdup(m->get_homedir().c_str());
+}
+
+void fides_sign(fides_manager *m, const char *statement) {
+	m->sign(statement);
+}
+
+void fides_allow(fides_manager *m, const char *statement, const fides_publickey *key) {
+	m->allow(statement, key);
+}
+
+void fides_dontcare(fides_manager *m, const char *statement, const fides_publickey *key) {
+	m->dontcare(statement, key);
+}
+
+void fides_deny(fides_manager *m, const char *statement, const fides_publickey *key) {
+	m->deny(statement, key);
+}
+
+bool fides_is_allowed(fides_manager *m, const char *statement, const fides_publickey *key) {
+	return m->is_allowed(statement, key);
+}
+
+bool fides_is_denied(fides_manager *m, const char *statement, const fides_publickey *key) {
+	return m->is_denied(statement, key);
+}
+
+void fides_auth_stats(fides_manager *m, const char *statement, int *self, int *trusted, int *all) {
+	return m->auth_stats(statement, *self, *trusted, *all);
+}
+
+void fides_trust(fides_manager *m, const fides_publickey *key) {
+	m->trust(key);
+}
+
+void fides_dctrust(fides_manager *m, const fides_publickey *key) {
+	m->dctrust(key);
+}
+
+void fides_distrust(fides_manager *m, const fides_publickey *key) {
+	m->distrust(key);
+}
+
+bool fides_is_trusted(fides_manager *m, const fides_publickey *key) {
+	return m->is_trusted(key);
+}
+
+bool fides_is_distrusted(fides_manager *m, const fides_publickey *key) {
+	return m->is_distrusted(key);
+}
+
+fides_publickey *fides_find_key(fides_manager *m, const char *fingerprint) {
+	return m->find_key(fingerprint);
+}
+
+void fides_update_trust(fides_manager *m) {
+	m->update_trust();
+}
+
+#if 0
+const fides_certificate **find_certificates(fides_manager *m, const fides_publickey *key, const char *statement) {
+	fides_certificate **result = 0;
+	vector<const Certificate *> certs = m->find_certificates(key, statement);
+	if(certs->size()) {
+		result = malloc(sizeof *result * certs->size());
+		for(int i = 0; i < certs->size(); i++)
+			result[i] = certs[i];
+	}
+	return result;
+}
+
+const fides_certificate *fides_import_certificate(fides_manager *m, const char *certificate) {
+	m->import_certificate(certificate);
+}
+
+char *fides_export_certificate(fides_manager *m, const fides_certificate *certificate) {
+	return strdup(m->export_certificate(certificate).c_str());
+}
+
+const fides_publickey *fides_import_key(fides_manager *m, const char *key) {
+	return m->import_key(key);
+}
+
+char *fides_export_key(fides_manager *m, const fides_publickey *key) {
+	return strdup(m->export_key(key).c_str());
+}
+
+void fides_import_all(fides_manager *m, FILE *in) {
+	m->import_all(in);
+}
+
+void fides_export_all(fides_manager *m, FILE *out) {
+	m->export_all(out);
+}
+#endif
+
+fides_certificate *fides_certificate_from_string(fides_manager *m, const char *certificate) {
+	return m->certificate_from_string(certificate);
+}
+
+fides_certificate *fides_certificate_load(fides_manager *m, const char *filename) {
+	return m->certificate_load(filename);
+}
+
+void fides_certificate_save(fides_manager *m, const fides_certificate *cert, const char *filename) {
+	m->certificate_save(cert, filename);
+}

@@ -18,10 +18,12 @@
 #ifndef __FIDES_CERTIFICATE_H__
 #define __FIDES_CERTIFICATE_H__
 
-#include <string>
 #include <sys/time.h>
 #include "publickey.h"
 #include "privatekey.h"
+
+#ifdef __cplusplus
+#include <string>
 
 namespace Fides {
 	class Certificate {
@@ -42,5 +44,23 @@ namespace Fides {
 		bool validate() const;
 	};
 }
+
+extern "C" {
+typedef Fides::Certificate fides_certificate;
+#else
+typedef struct fides_certificate fides_certificate;
+#endif
+
+extern fides_certificate *fides_certificate_new(const fides_publickey *pub, struct timeval timestamp, const char *statement, const char *signature);
+extern fides_certificate *fides_certificate_new_priv(const fides_privatekey *priv, struct timeval timestamp, const char *statement);
+extern void fides_certificate_free(fides_certificate *c);
+
+extern char *fides_certificate_to_string(fides_certificate *c);
+extern char *fides_certificate_fingerprint(fides_certificate *c, unsigned int bits);
+extern bool fides_certificate_validate(fides_certificate *c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

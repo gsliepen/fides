@@ -18,6 +18,7 @@
 #ifndef __FIDES_UTILITY_H__
 #define __FIDES_UTILITY_H__
 
+#ifdef __cplusplus
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -79,5 +80,17 @@ namespace Fides {
 
 	std::vector<std::string> dirlist(const std::string &path);
 }
+
+extern "C" {
+#endif
+
+extern char *fides_b64encode(const char *in);
+extern char *fides_b64decode(const char *in);
+extern char *fides_hexencode(const char *in);
+extern char *fides_hexdecode(const char *in);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

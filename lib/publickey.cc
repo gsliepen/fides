@@ -129,3 +129,47 @@ namespace Fides {
 		return verifier->check_signature(sig);
 	}
 }
+
+// C bindings
+
+fides_publickey *fides_publickey_new() {
+	return new Fides::PublicKey();
+}
+
+void fides_publickey_free(fides_publickey *k) {
+	delete k;
+}
+
+
+void fides_publickey_set_trust(fides_publickey *k, int trust) {
+	k->trust = trust;
+}
+
+int fides_publickey_get_trust(fides_publickey *k) {
+	return k->trust;
+}
+
+
+void fides_publickey_load(fides_publickey *k, const char *filename) {
+	k->load(filename);
+}
+
+void fides_publickey_save(fides_publickey *k, const char *filename) {
+	k->save(filename);
+}
+
+bool fides_publickey_verify(fides_publickey *k, const char *data, const char *signature) {
+	return k->verify(data, signature);
+}
+
+char *fides_publickey_to_string(fides_publickey *k) {
+	return strdup(k->to_string().c_str());
+}
+
+void fides_publickey_from_string(fides_publickey *k, const char *in) {
+	k->from_string(in);
+}
+
+char *fides_publickey_fingerprint(fides_publickey *k, unsigned int bits) {
+	return strdup(k->fingerprint(bits).c_str());
+}

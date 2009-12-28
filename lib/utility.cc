@@ -118,3 +118,21 @@ namespace Fides {
 		return files;
 	}
 }
+
+// C bindings
+
+char *fides_b64encode(const char *in) {
+	return strdup(Fides::b64encode(in).c_str());
+}
+
+char *fides_b64decode(const char *in) {
+	return strdup(Fides::b64decode(in).c_str());
+}
+
+char *fides_hexencode(const char *in) {
+	return strdup(Fides::hexencode(in).c_str());
+}
+
+char *fides_hexdecode(const char *in) {
+	return strdup(Fides::hexdecode(in).c_str());
+}

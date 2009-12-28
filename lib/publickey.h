@@ -18,6 +18,7 @@
 #ifndef __FIDES_PUBLICKEY_H__
 #define __FIDES_PUBLICKEY_H__
 
+#ifdef __cplusplus
 #include <string>
 #include <iostream>
 #include <botan/botan.h>
@@ -43,5 +44,29 @@ namespace Fides {
 		std::string fingerprint(unsigned int bits = 64) const;
 	};
 }
+
+extern "C" {
+typedef Fides::PublicKey fides_publickey;
+#else
+#include <stdbool.h>
+typedef struct fides_publickey fides_publickey;
+#endif
+
+extern fides_publickey *fides_publickey_new();
+extern void fides_publickey_free(fides_publickey *k);
+
+extern void fides_publickey_set_trust(fides_publickey *k, int trust);
+extern int fides_publickey_get_trust(fides_publickey *k);
+
+extern void fides_publickey_load(fides_publickey *k, const char *filename);
+extern void fides_publickey_save(fides_publickey *k, const char *filename);
+extern bool fides_publickey_verify(fides_publickey *k, const char *data, const char *signature);
+extern char *fides_publickey_to_string(fides_publickey *k);
+extern void fides_publickey_from_string(fides_publickey *k, const char *in);
+extern char *fides_publickey_fingerprint(fides_publickey *k, unsigned int bits);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
